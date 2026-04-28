@@ -4,8 +4,17 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
+    "android:emulator": "npm run emulator:start && npm run android",
+    "android:device": "npm run adb:devices && npm run android",
+    "android:clean": "cd android && ./gradlew clean",
+    "android:reverse": "adb reverse tcp:8081 tcp:8081",
+    "adb:devices": "adb devices",
+    "emulator:list": "emulator -list-avds",
+    "emulator:start": "sh -c 'AVD_NAME=${AVD_NAME:-Pixel_8_API_35}; if adb devices | grep -q emulator; then echo \"Emulador Android ja esta aberto\"; else echo \"Abrindo emulador: $AVD_NAME\"; nohup emulator -avd $AVD_NAME -netdelay none -netspeed full >/tmp/ble-device-monitor-emulator.log 2>&1 & sleep 20; fi'",
+    "doctor": "npx react-native doctor",
     "ios": "react-native run-ios",
     "start": "react-native start",
+    "start:reset": "react-native start --reset-cache",
     "test": "jest",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "typecheck": "tsc --noEmit"
