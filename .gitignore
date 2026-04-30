@@ -1,0 +1,34 @@
+# Dependências
+node_modules/
+BleDeviceMonitor/node_modules/
+
+# Logs e temporários
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm/
+.yarn/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# React Native / Metro
+.metro-health-check*
+.expo/
+.expo-shared/
+coverage/
+dist/
+build/
+
+# Cache de testes
+.jest-cache/
+
+# Variáveis de ambiente locais
+.env.local
+.env.*.local

@@ -33,6 +33,9 @@ O app permite:
 ## Estrutura
 
 ```txt
+BleDeviceMonitor/
+  android/
+  ios/
 src/
   app/
     AppNavigator.tsx
@@ -61,6 +64,8 @@ src/
   store/
     bluetooth.store.ts
 ```
+
+Os diretórios nativos Android/iOS ficam em `BleDeviceMonitor/`, enquanto o código TypeScript e o `package.json` ficam na raiz do repositório.
 
 ## Ambiente recomendado no Linux Garuda
 
@@ -202,7 +207,7 @@ Inicia o Metro limpando cache.
 npm run android
 ```
 
-Compila e instala o app em um emulador ou dispositivo Android já aberto.
+Compila e instala o app em um emulador ou dispositivo Android já aberto (usando `BleDeviceMonitor/android` como projeto nativo).
 
 ```bash
 npm run android:emulator
@@ -376,15 +381,9 @@ Dispositivos úteis para teste:
 - [ ] Serviços e características aparecem após conexão.
 - [ ] Desconexão funciona.
 
-## Criar projeto React Native nativo
+## Estrutura nativa do projeto
 
-Este repositório contém a estrutura base, documentação, ADRs e código inicial. Para gerar os diretórios nativos completos, execute:
-
-```bash
-npx @react-native-community/cli init BleDeviceMonitor --template react-native-template-typescript
-```
-
-Depois copie os arquivos deste repositório para dentro do projeto gerado.
+Este repositório já contém os diretórios nativos React Native em `BleDeviceMonitor/android` e `BleDeviceMonitor/ios`.
 
 ## Permissões Android
 

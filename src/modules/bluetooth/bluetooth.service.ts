@@ -6,7 +6,11 @@ export class BluetoothService {
   }
 
   async scan(seconds = 5): Promise<void> {
-    await BleManager.scan([], seconds, true);
+    await BleManager.scan({
+      serviceUUIDs: [],
+      seconds,
+      allowDuplicates: true,
+    });
   }
 
   async stopScan(): Promise<void> {

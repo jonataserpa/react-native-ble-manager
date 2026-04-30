@@ -6,9 +6,10 @@
     "android": "react-native run-android",
     "android:emulator": "npm run emulator:start && npm run android",
     "android:device": "npm run adb:devices && npm run android",
-    "android:clean": "cd android && ./gradlew clean",
+    "android:clean": "cd BleDeviceMonitor/android && ./gradlew clean",
     "android:reverse": "adb reverse tcp:8081 tcp:8081",
     "adb:devices": "adb devices",
+    "android:dev": "npm run android:reverse && npx react-native run-android --no-packager",
     "emulator:list": "emulator -list-avds",
     "emulator:start": "sh -c 'AVD_NAME=${AVD_NAME:-Pixel_8_API_35}; if adb devices | grep -q emulator; then echo \"Emulador Android ja esta aberto\"; else echo \"Abrindo emulador: $AVD_NAME\"; nohup emulator -avd $AVD_NAME -netdelay none -netspeed full >/tmp/ble-device-monitor-emulator.log 2>&1 & sleep 20; fi'",
     "doctor": "npx react-native doctor",
@@ -16,18 +17,20 @@
     "start": "react-native start",
     "start:reset": "react-native start --reset-cache",
     "test": "jest",
+    "validate": "npm run typecheck && npm run lint && npm test",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-navigation/native": "^7.0.14",
-    "@react-navigation/native-stack": "^7.2.0",
-    "react": "^19.0.0",
-    "react-native": "^0.78.0",
+    "@react-navigation/native-stack": "^7.14.12",
+    "react": "19.0.0",
+    "react-native": "0.78.3",
     "react-native-ble-manager": "^12.0.0",
+    "react-native-gesture-handler": "^2.31.1",
     "react-native-safe-area-context": "^5.2.0",
-    "react-native-screens": "^4.6.0",
+    "react-native-screens": "4.9.1",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
@@ -42,15 +45,20 @@
     "@react-native/metro-config": "^0.78.0",
     "@react-native/typescript-config": "^0.78.0",
     "@types/jest": "^29.5.14",
-    "@types/react": "^19.0.0",
-    "@types/react-test-renderer": "^19.0.0",
+    "@types/react": "~19.0.0",
+    "@types/react-test-renderer": "~19.0.0",
     "eslint": "^8.57.1",
     "jest": "^29.7.0",
     "prettier": "^3.4.2",
-    "react-test-renderer": "^19.0.0",
+    "react-test-renderer": "19.0.0",
     "typescript": "^5.7.3"
   },
   "engines": {
     "node": ">=18"
+  },
+  "overrides": {
+    "react": "19.0.0",
+    "react-test-renderer": "19.0.0",
+    "@types/react": "~19.0.0"
   }
 }

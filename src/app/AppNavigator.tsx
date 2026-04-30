@@ -16,6 +16,7 @@ export type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+/** Native stack usa telas nativas (sem PanGestureHandler+Animated do pacote `@react-navigation/stack`). */
 export function AppNavigator() {
   return (
     <NavigationContainer>
