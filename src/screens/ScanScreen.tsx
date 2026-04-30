@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {FlatList, StyleSheet, Text, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {DeviceCard} from '../components/DeviceCard';
@@ -10,6 +10,11 @@ import type {RootStackParamList} from '../app/AppNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Scan'>;
 
+const SCAN_DURATION_SECONDS = 8;
+/** Buffer extra acima de SCAN_DURATION para destravar a UI caso o evento nativo
+ *  `BleManagerStopScan` nao chegue (Xiaomi/HyperOS as vezes engole). */
+const SCAN_SAFETY_TIMEOUT_MS = (SCAN_DURATION_SECONDS + 3) * 1000;
+
 export function ScanScreen({navigation}: Props) {
   const devices = useBluetoothStore(state => state.devices);
   const isScanning = useBluetoothStore(state => state.isScanning);
@@ -17,6 +22,15 @@ export function ScanScreen({navigation}: Props) {
   const clearDevices = useBluetoothStore(state => state.clearDevices);
   const setIsScanning = useBluetoothStore(state => state.setIsScanning);
   const addLog = useBluetoothStore(state => state.addLog);
+
+  const safetyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearSafetyTimeout() {
+    if (safetyTimeoutRef.current) {
+      clearTimeout(safetyTimeoutRef.current);
+      safetyTimeoutRef.current = null;
+    }
+  }
 
   useEffect(() => {
     const discoverSubscription = onDiscoverPeripheral(device => {
@@ -27,10 +41,11 @@ export function ScanScreen({navigation}: Props) {
         advertising: device.advertising,
         isConnectable: device.isConnectable,
       });
-      addLog('info', `Dispositivo encontrado: ${device.name || device.id}`);
+      addLog('info', `Encontrado: ${device.name || device.id} (rssi=${device.rssi})`);
     });
 
     const stopScanSubscription = onStopScan(() => {
+      clearSafetyTimeout();
       setIsScanning(false);
       addLog('info', 'Scan BLE finalizado.');
     });
@@ -38,18 +53,38 @@ export function ScanScreen({navigation}: Props) {
     return () => {
       discoverSubscription.remove();
       stopScanSubscription.remove();
+      clearSafetyTimeout();
     };
   }, [addDevice, addLog, setIsScanning]);
 
   async function handleScan() {
     try {
+      const adapter = await bluetoothService.getAdapterState();
+      if (adapter !== 'on') {
+        addLog(
+          'warning',
+          `Bluetooth ${adapter}. Ative o Bluetooth nas configuracoes do sistema e tente novamente.`,
+        );
+        return;
+      }
+
       clearDevices();
       setIsScanning(true);
-      addLog('info', 'Iniciando scan BLE por 5 segundos.');
-      await bluetoothService.scan(5);
+      addLog('info', `Iniciando scan BLE por ${SCAN_DURATION_SECONDS}s.`);
+      await bluetoothService.scan(SCAN_DURATION_SECONDS);
+
+      clearSafetyTimeout();
+      safetyTimeoutRef.current = setTimeout(() => {
+        if (useBluetoothStore.getState().isScanning) {
+          addLog('warning', 'Scan nao emitiu StopScan; resetando UI por seguranca.');
+          setIsScanning(false);
+        }
+      }, SCAN_SAFETY_TIMEOUT_MS);
     } catch (error) {
+      clearSafetyTimeout();
       setIsScanning(false);
-      addLog('error', 'Erro ao iniciar scan BLE.');
+      const message = error instanceof Error ? error.message : String(error);
+      addLog('error', `Erro ao iniciar scan BLE: ${message}`);
     }
   }
 

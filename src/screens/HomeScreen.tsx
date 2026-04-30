@@ -3,6 +3,7 @@ import {Pressable, StyleSheet, Text, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {bluetoothService} from '../modules/bluetooth/bluetooth.service';
 import {requestBluetoothPermissions} from '../modules/bluetooth/bluetooth.permissions';
+import {onAdapterStateChange} from '../modules/bluetooth/bluetooth.boot';
 import {PermissionStatus} from '../components/PermissionStatus';
 import {useBluetoothStore} from '../store/bluetooth.store';
 import type {RootStackParamList} from '../app/AppNavigator';
@@ -15,24 +16,36 @@ export function HomeScreen({navigation}: Props) {
   const addLog = useBluetoothStore(state => state.addLog);
 
   useEffect(() => {
+    const unsubscribe = onAdapterStateChange(state => {
+      addLog('info', `Adapter Bluetooth mudou para "${state}".`);
+    });
+
     async function bootstrap() {
       try {
-        const granted = await requestBluetoothPermissions();
+        const {granted, denied} = await requestBluetoothPermissions();
         setPermissionsGranted(granted);
 
-        if (granted) {
-          await bluetoothService.start();
-          addLog('success', 'Módulo BLE inicializado com sucesso.');
+        if (!granted) {
+          addLog(
+            'warning',
+            `Permissões Bluetooth negadas: ${denied.join(', ') || 'desconhecidas'}.`,
+          );
           return;
         }
 
-        addLog('warning', 'Permissões Bluetooth não foram concedidas.');
+        await bluetoothService.start();
+        addLog('success', 'Módulo BLE inicializado.');
       } catch (error) {
-        addLog('error', 'Erro ao inicializar o módulo BLE.');
+        const message = error instanceof Error ? error.message : String(error);
+        addLog('error', `Falha ao inicializar BLE: ${message}`);
       }
     }
 
     bootstrap();
+
+    return () => {
+      unsubscribe();
+    };
   }, [addLog, setPermissionsGranted]);
 
   return (
