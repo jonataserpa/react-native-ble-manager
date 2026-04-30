@@ -6,6 +6,7 @@ import {requestBluetoothPermissions} from '../modules/bluetooth/bluetooth.permis
 import {onAdapterStateChange} from '../modules/bluetooth/bluetooth.boot';
 import {PermissionStatus} from '../components/PermissionStatus';
 import {useBluetoothStore} from '../store/bluetooth.store';
+import {useFavoritesStore} from '../store/favorites.store';
 import type {RootStackParamList} from '../app/AppNavigator';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
@@ -14,6 +15,12 @@ export function HomeScreen({navigation}: Props) {
   const permissionsGranted = useBluetoothStore(state => state.permissionsGranted);
   const setPermissionsGranted = useBluetoothStore(state => state.setPermissionsGranted);
   const addLog = useBluetoothStore(state => state.addLog);
+  const hydrateFavorites = useFavoritesStore(state => state.hydrate);
+  const favoritesCount = useFavoritesStore(state => state.favorites.length);
+
+  useEffect(() => {
+    hydrateFavorites();
+  }, [hydrateFavorites]);
 
   useEffect(() => {
     const unsubscribe = onAdapterStateChange(state => {
@@ -61,6 +68,12 @@ export function HomeScreen({navigation}: Props) {
         <Text style={styles.buttonText}>Buscar dispositivos</Text>
       </Pressable>
 
+      <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Favorites')}>
+        <Text style={styles.secondaryButtonText}>
+          Favoritos {favoritesCount > 0 ? `(${favoritesCount})` : ''}
+        </Text>
+      </Pressable>
+
       <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Logs')}>
         <Text style={styles.secondaryButtonText}>Ver logs</Text>
       </Pressable>
@@ -103,6 +116,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
+    marginBottom: 12,
   },
   secondaryButtonText: {
     color: '#2563eb',

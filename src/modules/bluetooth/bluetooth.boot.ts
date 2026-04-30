@@ -1,5 +1,6 @@
 import {NativeEventEmitter, NativeModules} from 'react-native';
 import type {EmitterSubscription} from 'react-native';
+import {useBluetoothStore} from '../../store/bluetooth.store';
 
 /**
  * Sentinela do BleManagerDidUpdateState.
@@ -34,8 +35,50 @@ function ensureSubscription() {
   );
 }
 
+/**
+ * Listener global de Connect/Disconnect: mantem o `connectedDevice` do store
+ * sincronizado mesmo quando a conexao/desconexao acontece fora da tela
+ * (ex: outra tela do app, reconexao automatica, ou desconexao espontanea
+ * do peripheral fora de alcance).
+ */
+let connectionSubscriptions: EmitterSubscription[] | null = null;
+
+function ensureConnectionTracking() {
+  if (connectionSubscriptions) {
+    return;
+  }
+  const emitter = new NativeEventEmitter(NativeModules.BleManager);
+  connectionSubscriptions = [
+    emitter.addListener(
+      'BleManagerConnectPeripheral',
+      (event: {peripheral?: string} | undefined) => {
+        const id = event?.peripheral;
+        if (!id) {
+          return;
+        }
+        const store = useBluetoothStore.getState();
+        const known = store.devices.find(item => item.id === id);
+        store.setConnectedDevice(known ?? {id, name: ''});
+        store.addLog('success', `Conexao detectada com ${known?.name || id}.`);
+      },
+    ),
+    emitter.addListener(
+      'BleManagerDisconnectPeripheral',
+      (event: {peripheral?: string} | undefined) => {
+        const id = event?.peripheral;
+        const store = useBluetoothStore.getState();
+        if (store.connectedDevice && store.connectedDevice.id === id) {
+          store.setConnectedDevice(null);
+          store.addLog('warning', `Desconexao detectada de ${id ?? 'desconhecido'}.`);
+        }
+      },
+    ),
+  ];
+}
+
 export function bootstrapBluetoothBridge(): void {
   ensureSubscription();
+  ensureConnectionTracking();
 }
 
 export function onAdapterStateChange(listener: StateListener): () => void {

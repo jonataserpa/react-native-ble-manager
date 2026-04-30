@@ -8,16 +8,26 @@ O objetivo é criar um app útil para desenvolvedores e técnicos que trabalham 
 
 O app permite:
 
-- Solicitar permissões Bluetooth por plataforma.
-- Verificar e inicializar o módulo BLE.
-- Escanear dispositivos BLE próximos.
-- Listar dispositivos encontrados.
-- Conectar e desconectar dispositivos.
-- Descobrir serviços e características.
-- Ler características BLE.
-- Assinar notificações de características.
-- Exibir logs de comunicação.
-- Salvar dispositivos favoritos localmente.
+- [x] Solicitar permissões Bluetooth por plataforma.
+- [x] Verificar e inicializar o módulo BLE.
+- [x] Escanear dispositivos BLE próximos.
+- [x] Listar dispositivos encontrados (com botão de favoritar).
+- [x] Conectar e desconectar dispositivos (com timeout client-side, loading e mensagem de erro inline).
+- [x] Descobrir serviços e características (lista estruturada por serviço, com properties).
+- [x] Ler características BLE (botão **Ler** em characteristics com property `Read`; mostra hex + ASCII imprimível).
+- [x] Assinar notificações de características (toggle **Assinar/Parar notify** em characteristics com `Notify`/`Indicate`; valores chegam em tempo real).
+- [x] Exibir logs de comunicação (todas as ações geram entrada na tela **Logs BLE**).
+- [x] Salvar dispositivos favoritos localmente (estrela ★ no card e na tela de detalhes; persistido em `AsyncStorage`, sobrevive a reinícios).
+
+### Fluxo típico de uso
+
+1. **Home** → permite checar permissões e abrir as áreas de Buscar / Favoritos / Logs.
+2. **Buscar dispositivos** → roda um scan de 8s; cada card mostra nome, MAC, RSSI, conectabilidade e ★. Tocar abre **Detalhes**.
+3. **Favoritos** → lista os dispositivos marcados ★, com data em que foram salvos. Tocar abre **Detalhes** já com o cabeçalho preenchido (mesmo offline).
+4. **Detalhes do dispositivo** → botão **Conectar** (com loading e timeout de 20s). Conectado, descobre serviços e mostra `CharacteristicCard` para cada característica:
+   - Botão **Ler** → faz `BleManager.read` e exibe o último valor em hex + tradução ASCII (quando aplicável).
+   - Botão **Assinar notify** → `BleManager.startNotification`; valores recebidos via `BleManagerDidUpdateValueForCharacteristic` aparecem com timestamp. Toque novamente para parar.
+5. Ao desconectar (ou sair da tela), todas as `notifications` ativas são interrompidas automaticamente.
 
 ## Stack
 
@@ -40,29 +50,32 @@ src/
   app/
     AppNavigator.tsx
   components/
-    DeviceCard.tsx
+    CharacteristicCard.tsx     # 1 characteristic com botoes Ler / Notify
+    DeviceCard.tsx             # card do scan + estrela favorito
+    FavoriteToggle.tsx         # botao estrela reutilizavel
     PermissionStatus.tsx
     ScanButton.tsx
+    ServicesList.tsx           # agrupa characteristics por servico
   modules/
     bluetooth/
+      bluetooth.boot.ts        # sentinela DidUpdateState (boot)
       bluetooth.events.ts
       bluetooth.permissions.ts
-      bluetooth.service.ts
+      bluetooth.service.ts     # connect com timeout, read, start/stopNotification
       bluetooth.types.ts
+      useCharacteristicValues.ts # hook read/notify por peripheral
   screens/
-    DeviceDetailsScreen.tsx
+    DeviceDetailsScreen.tsx    # connect + lista de servicos/chars + favorito
+    FavoritesScreen.tsx
     HomeScreen.tsx
     LogsScreen.tsx
     ScanScreen.tsx
   shared/
-    errors/
-      AppError.ts
-    utils/
-      bytes.ts
-  storage/
-    favorites.storage.ts
+    formatBleLabel.ts
+    formatBytes.ts             # bytes -> hex / ASCII imprimivel
   store/
     bluetooth.store.ts
+    favorites.store.ts         # persiste favoritos no AsyncStorage
 ```
 
 Os diretórios nativos Android/iOS ficam em `BleDeviceMonitor/`, enquanto o código TypeScript e o `package.json` ficam na raiz do repositório.
@@ -466,6 +479,49 @@ Esse comando roda `gradlew assembleRelease` em `BleDeviceMonitor/android` e depo
 7. Toque em **Conectar**.
 8. Após conectar, o app tenta recuperar serviços e características.
 9. Acesse **Logs BLE** para ver eventos de scan, conexão, erros e diagnóstico.
+
+## Quais dispositivos posso conectar
+
+> **Resumo rápido**: o app fala **GATT sobre Bluetooth Low Energy (BLE)**. Isso significa que ele se conecta a **periféricos BLE que expõem um GATT server** — e **não** a dispositivos Bluetooth Classic (BR/EDR), nem a beacons puros, nem a aparelhos pareados pelo SO via perfis A2DP/HFP/HID.
+
+### ✅ Tipos de dispositivos que conectam
+
+| Categoria | Exemplos típicos | Observações |
+|---|---|---|
+| **Microcontroladores BLE** | ESP32, ESP32-C3/S3, nRF52, Raspberry Pi Pico W, Arduino Nano 33 BLE, módulos HM-10 / HC-08 | Maior caso de uso. Use libs como `ArduinoBLE` ou `NimBLE-Arduino` para expor um GATT server custom. |
+| **Sensores médicos com perfis padrão** | Oxímetro de dedo, termômetro, balança, glicosímetro, monitor de pressão, smart band genérico | Muitos seguem perfis SIG (Heart Rate, Blood Pressure, Health Thermometer). |
+| **Wearables & smartwatches abertos** | Mi Band 2/3 (modo unauthenticated), pulseiras de fitness com SDK público | Smartwatches modernos (Apple Watch, Galaxy Watch ativo, etc.) **não** conectam — usam pareamento criptografado. |
+| **Lâmpadas, plugues e atuadores BLE** | Lâmpadas Yeelight/Mesh genéricas, plugues smart sem hub, fechaduras inteligentes | Algumas precisam de **bond/PIN** — use o switch _autoconnect_ ou empareie pelas Configurações Bluetooth do sistema antes. |
+| **Beacons configuráveis** | iBeacon/Eddystone com modo de configuração (gimbal, kontakt.io, RadBeacon) | Em modo broadcast normal **só aparecem no scan**. Em modo configuração eles abrem GATT temporariamente. |
+| **Equipamento industrial / medidor** | Multímetros BLE, balanças industriais, leitores RFID/NFC com BLE, dataloggers | Verifique se o fabricante documenta UUIDs GATT públicos. |
+| **Outros celulares rodando este app** | Outro Android com este app exposto como peripheral (extensão futura) | Hoje o app só age como _central_; veja o roadmap. |
+
+### ❌ Tipos de dispositivos que **NÃO** conectam
+
+| Categoria | Por quê | O que fazer |
+|---|---|---|
+| **Fones de ouvido Bluetooth comuns** (JBL, Sony, Edifier) | Usam **Bluetooth Classic** (A2DP/HFP), não BLE GATT | Pareie pelas Configurações do Android — esse app não controla áudio. |
+| **AirPods, Galaxy Buds, Pixel Buds** | Usam BLE + perfis proprietários protegidos por chaves do fabricante | Sem solução em apps de terceiros. |
+| **Mouses e teclados Bluetooth Classic** | Perfil HID sobre BR/EDR | Pareie pelo SO. |
+| **Beacons puros (iBeacon/Eddystone em modo normal)** | Só fazem broadcast (advertising), **não** abrem GATT server | Aparecem no scan, mas o **Conectar** vai dar timeout. Isto é esperado. |
+| **Outro celular/tablet com "Bluetooth ligado"** | Não estão em modo _advertising_ BLE por padrão | Para testar, instale "**BLE Peripheral Simulator**" (Google Play) no outro device. |
+| **Smart TVs, geladeiras, ar-condicionado IoT comuns** | Geralmente usam Wi-Fi + nuvem; BLE só para **provisionamento inicial** | Mesmo se aparecerem, o GATT só fica aberto durante o pareamento via app oficial. |
+| **Apple Watch, HomeKit, Find My, AirTag** | Criptografia ponta-a-ponta exclusiva da Apple | Sem solução em apps de terceiros. |
+| **Dispositivos pareados como áudio/teclado pelo Android** | Esses estão conectados via **perfis Classic** (A2DP/HFP/HID) — não aparecem em `getConnectedPeripherals` da lib | É uma limitação do Android, não do app. |
+
+### ⚠️ Casos com ressalva (alguns conectam, outros não — depende do firmware)
+
+- **Periféricos que pedem PIN/bond antes do GATT**: use o botão **Conectar** com o switch **Modo autoconnect** ligado, ou empareie primeiro nas Configurações Bluetooth do Android (o bond persiste).
+- **Periféricos em "low-power advertising"**: anunciam por janelas curtas e demoram a aceitar conexão. **Modo autoconnect** é obrigatório.
+- **Periféricos com criptografia de característica** (`Notify Encryption Required`, `Indicate Encryption Required`): este app exibe a property mas a leitura/notify só funciona após bond. Crie o bond primeiro pelas Configurações.
+- **Periféricos com MTU > 23**: a característica responde com payload truncado até você pedir MTU maior. O app ainda **não** expõe um botão de `requestMTU` (no roadmap).
+
+### Como descobrir se um periférico vai conectar
+
+1. Abra **Buscar dispositivos** e veja se aparece com `Conectavel` no card. Se vier `Nao conectavel`, o próprio advertising já avisa que ele não aceita GATT — **pule**.
+2. Mesmo se vier `Conectavel`, pode ser broadcast-only (alguns chips marcam errado a flag). Tente conectar; se der **timeout**, é provável que ele só anuncie.
+3. Periféricos "demorados" (sensores com janela de advertising muito espaçada): tente **Conectar** com o switch **Modo autoconnect** ligado.
+4. Em caso de dúvida, instale um app de referência como **nRF Connect** (Nordic Semiconductor, Google Play) no mesmo celular: se ele consegue ver serviços/características, este app também consegue.
 
 ## Como testar o app
 

@@ -5,6 +5,7 @@ import {HomeScreen} from '../screens/HomeScreen';
 import {ScanScreen} from '../screens/ScanScreen';
 import {DeviceDetailsScreen} from '../screens/DeviceDetailsScreen';
 import {LogsScreen} from '../screens/LogsScreen';
+import {FavoritesScreen} from '../screens/FavoritesScreen';
 import type {BluetoothDevice} from '../modules/bluetooth/bluetooth.types';
 
 export type RootStackParamList = {
@@ -12,6 +13,7 @@ export type RootStackParamList = {
   Scan: undefined;
   DeviceDetails: {device: BluetoothDevice};
   Logs: undefined;
+  Favorites: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -25,6 +27,7 @@ export function AppNavigator() {
         <Stack.Screen name="Scan" component={ScanScreen} options={{title: 'Buscar dispositivos'}} />
         <Stack.Screen name="DeviceDetails" component={DeviceDetailsScreen} options={{title: 'Detalhes do dispositivo'}} />
         <Stack.Screen name="Logs" component={LogsScreen} options={{title: 'Logs BLE'}} />
+        <Stack.Screen name="Favorites" component={FavoritesScreen} options={{title: 'Favoritos'}} />
       </Stack.Navigator>
     </NavigationContainer>
   );

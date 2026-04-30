@@ -39,8 +39,17 @@ export function onStopScan(callback: () => void): Subscription {
   return bleManagerEmitter.addListener('BleManagerStopScan', callback);
 }
 
+export function onConnectPeripheral(
+  callback: (event: {peripheral: string; status?: number}) => void,
+): Subscription {
+  return bleManagerEmitter.addListener(
+    'BleManagerConnectPeripheral',
+    callback,
+  );
+}
+
 export function onDisconnectPeripheral(
-  callback: (event: {peripheral: string}) => void,
+  callback: (event: {peripheral: string; status?: number}) => void,
 ): Subscription {
   return bleManagerEmitter.addListener(
     'BleManagerDisconnectPeripheral',

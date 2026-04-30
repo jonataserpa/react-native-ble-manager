@@ -1,6 +1,8 @@
 import React from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import type {BluetoothDevice} from '../modules/bluetooth/bluetooth.types';
+import {FavoriteToggle} from './FavoriteToggle';
+import {useFavoritesStore} from '../store/favorites.store';
 
 type DeviceCardProps = {
   device: BluetoothDevice;
@@ -8,17 +10,29 @@ type DeviceCardProps = {
 };
 
 export function DeviceCard({device, onPress}: DeviceCardProps) {
+  const isFavorite = useFavoritesStore(state => state.isFavorite(device.id));
+  const toggle = useFavoritesStore(state => state.toggle);
+
   return (
     <Pressable style={styles.card} onPress={() => onPress?.(device)}>
       <View style={styles.header}>
-        <Text style={styles.name}>{device.name || 'Dispositivo sem nome'}</Text>
-        {typeof device.rssi === 'number' ? (
-          <Text style={styles.rssi}>{device.rssi} dBm</Text>
-        ) : null}
+        <Text style={styles.name} numberOfLines={1}>
+          {device.name || 'Dispositivo sem nome'}
+        </Text>
+        <View style={styles.headerRight}>
+          {typeof device.rssi === 'number' ? (
+            <Text style={styles.rssi}>{device.rssi} dBm</Text>
+          ) : null}
+          <FavoriteToggle
+            isFavorite={isFavorite}
+            onToggle={() => toggle(device)}
+            size="sm"
+          />
+        </View>
       </View>
       <Text style={styles.id}>{device.id}</Text>
       <Text style={styles.status}>
-        {device.isConnectable === false ? 'Não conectável' : 'Conectável'}
+        {device.isConnectable === false ? 'Nao conectavel' : 'Conectavel'}
       </Text>
     </Pressable>
   );
@@ -36,7 +50,13 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     gap: 12,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   name: {
     color: '#111827',
