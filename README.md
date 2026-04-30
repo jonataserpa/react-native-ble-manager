@@ -29,6 +29,48 @@ O app permite:
    - Botão **Assinar notify** → `BleManager.startNotification`; valores recebidos via `BleManagerDidUpdateValueForCharacteristic` aparecem com timestamp. Toque novamente para parar.
 5. Ao desconectar (ou sair da tela), todas as `notifications` ativas são interrompidas automaticamente.
 
+## Capturas de tela
+
+Capturas reais do app rodando em um Redmi Note 14 (Android 15 / HyperOS).
+
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <a href="docs/screenshots/home.png">
+        <img src="docs/screenshots/home.png" width="240" alt="Tela inicial: status de permissoes, atalhos para Buscar / Favoritos / Logs" />
+      </a>
+      <br/><sub><b>Home</b><br/>Permissoes e navegacao</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="docs/screenshots/scan-empty.png">
+        <img src="docs/screenshots/scan-empty.png" width="240" alt="Tela de scan vazia, antes de iniciar a busca" />
+      </a>
+      <br/><sub><b>Scan (vazio)</b><br/>Pronto para iniciar</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="docs/screenshots/scan-results.png">
+        <img src="docs/screenshots/scan-results.png" width="240" alt="Tela de scan com um peripheral encontrado, exibindo MAC, RSSI e estrela de favorito" />
+      </a>
+      <br/><sub><b>Scan (resultados)</b><br/>RSSI, MAC e favorito</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="33%">
+      <a href="docs/screenshots/device-details.png">
+        <img src="docs/screenshots/device-details.png" width="240" alt="Tela de detalhes do dispositivo, com switch Modo autoconnect e botao Conectar" />
+      </a>
+      <br/><sub><b>Detalhes</b><br/>Modo autoconnect e conexao</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="docs/screenshots/logs.png">
+        <img src="docs/screenshots/logs.png" width="240" alt="Tela de logs com eventos de scan e descoberta de peripherals em ordem cronologica" />
+      </a>
+      <br/><sub><b>Logs BLE</b><br/>Auditoria de eventos</sub>
+    </td>
+    <td align="center" width="33%"></td>
+  </tr>
+</table>
+
 ## Stack
 
 - React Native CLI
